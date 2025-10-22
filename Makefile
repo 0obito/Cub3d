@@ -6,7 +6,7 @@ OBJ      = $(SRC:.c=.o)
 NAME     = Cub3d
 
 $(NAME)  : $(OBJ)
-	$(CC) $(CFLAGS) $(OBJ) $(MLXFLAGS) -o $(NAME)
+	$(CC) -fsanitize=address $(CFLAGS) $(OBJ) $(MLXFLAGS) -o $(NAME)
 
 all      : $(NAME)
 
