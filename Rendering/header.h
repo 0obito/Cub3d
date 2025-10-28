@@ -8,6 +8,13 @@
 # include "../minilibx-linux/mlx.h"
 # include <X11/keysym.h>
 
+# define WIN_HEIGHT 500
+# define WIN_WIDTH 500
+# define MAP_HEIGHT 10
+# define MAP_WIDTH 8
+# define GRID_HEIGHT (WIN_HEIGHT / MAP_HEIGHT)
+# define GRID_WIDTH (WIN_WIDTH / MAP_WIDTH)
+
 typedef struct s_mlx
 {
 	void	*mlx_ptr;
@@ -23,17 +30,17 @@ typedef struct s_imgdata
 	int		endian;
 }				t_imgdata;
 
-typedef struct s_coordinates
+typedef struct s_player_pos
 {
 	int		x;
 	int		y;
-}				t_coordinates;
+}				t_player_pos;
 
 typedef struct s_variables
 {
 	t_mlx			*mlx_vars;
 	t_imgdata		*imgdata_vars;
-	t_coordinates	*coordinates_vars;
+	t_player_pos	*coordinates_vars;
 }				t_variables;
 
 #endif /* HEADER */
