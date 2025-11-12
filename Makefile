@@ -1,12 +1,12 @@
 CC       = gcc
 CFLAGS   = -Wall -Wextra -Werror
-MLXFLAGS = -lmlx -lXext -lX11
-SRC      = Rendering/first_step.c
+MLXFLAGS = -lmlx -lXext -lX11 -lm
+SRC      = cub3d.c utilities/utils_1.c Rendering/init.c Rendering/drawing_utils.c Rendering/render.c
 OBJ      = $(SRC:.c=.o)
 NAME     = Cub3d
 
 $(NAME)  : $(OBJ)
-	$(CC) -fsanitize=address $(CFLAGS) $(OBJ) $(MLXFLAGS) -o $(NAME)
+	$(CC) $(CFLAGS) $(OBJ) $(MLXFLAGS) -o $(NAME)
 
 all      : $(NAME)
 
