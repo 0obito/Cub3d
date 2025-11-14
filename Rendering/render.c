@@ -12,42 +12,70 @@
 
 #include "../cub3d.h"
 
+void	values_corrector(int *y_corr, int *x_corr, double angle)
+{
+	(void)((angle >= 0) && (angle <= 90)
+		&& (*y_corr = 1) && (*x_corr = 1) && printf("quart 1\n"));
+	(void)((angle >= 90) && (angle <= 180)
+		&& (*y_corr = 1) && (*x_corr = -1) && printf("quart 2\n"));
+	(void)((angle >= 180) && (angle <= 270)
+		&& (*y_corr = -1) && (*x_corr = -1) && printf("quart 3\n"));
+	(void)((angle >= 270) && (angle <= 360)
+		&& (*y_corr = -1) && (*x_corr = 1) && printf("quart 4\n"));
+}
+
+	// notice: there's a division by 0 possibility
 int	find_wall(t_data *data, double angle, char map[MAP_HEIGHT][MAP_WIDTH])
 {
-	int	ray_len;
-	int	nearest_y;
-	float	nearest_x;
+	double	nearest_y;
+	double	nearest_x;
+	int		grid_y;
+	int		grid_x;
+	int		y_corr;
+	int		x_corr;
 
+	values_corrector(&y_corr, &x_corr, angle);
+	printf("Ray at angle: %f\n", angle);
 	nearest_y = data->ray->nearest_blocky;
 	nearest_x = data->ray->nearest_blockx;
-	// while (ray_in_limits(map, data->ray))
-	// {
-	// 		;
-	// }
-	// (be careful) if (nearest_x == INFINITY || nearest_y == INFINITY)
-	if (nearest_y < nearest_x)
-		data->ray->ray_length += (data->ray->nearest_blocky) / 2;
-	else if (data->ray->nearest_blocky > data->ray->nearest_blockx)
-		data->ray->ray_length += (data->ray->nearest_blockx) / 2;
-	// else ?
-	while (1)
+	grid_y = data->ray->grid_y;
+	grid_x = data->ray->grid_x;
+	while (grid_y >= 0 && grid_y <= 9 && grid_x >= 0 && grid_x <= 9)
 	{
-		ray_len = data->ray->ray_length;
-		if ((fabs((ray_len % nearest_y) - nearest_y))
-			< (fabs(ray_len % nearest_x - nearest_x)))
-			;
+		if (nearest_y < nearest_x)
+		{
+			grid_y += y_corr;
+			nearest_y += data->ray->nearest_blocky;
+		}
+		else if (nearest_y > nearest_x)
+		{
+			grid_x += x_corr;
+			nearest_x += data->ray->nearest_blockx;
+		}
+		else
+		{
+			grid_y += y_corr;
+			grid_x += x_corr;
+			nearest_y += data->ray->nearest_blocky;
+			nearest_x += data->ray->nearest_blockx;
+		}
+		if (grid_y >= 0 && grid_y <= 9 && grid_x >= 0 && grid_x <= 9
+				&& map[grid_y][grid_x] == '1')
+		{
+			printf("Wall found at %d %d\n", grid_y, grid_x);
+			return (1);
+		}
 	}
 	return (0);
 }
 
 void	cast_vectors(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH])
 {
-	double			angle;
-	double			delta_angle;
+	double		angle;
+	int			delta_angle;
 
-	(void)map;
 	delta_angle = 40;
-	angle = data->player->starting_angle - (delta_angle / 2);
+	angle = (data->player->starting_angle) - (delta_angle / 2) + 360;
 	data->ray->ray_length = 0;
 	data->ray->traveled_y = GRID_HEIGHT / 2;
 	data->ray->traveled_x = GRID_WIDTH / 2;
@@ -56,6 +84,7 @@ void	cast_vectors(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH])
 		// set to half the value at first (player is in the center of the grid)
 		// then start resetting it to the whole value everytime
 		// the corresponding grid is encountered.
+		angle = (int)angle % 360;
 		data->ray->nearest_blocky
 			= fabs(GRID_HEIGHT / (sin(angle * (M_PI / 180))));
 		data->ray->nearest_blockx
@@ -87,6 +116,7 @@ void	block_to_pixel_coords(t_data *data, int j, int i)
 	(void)((data->player->direction == 'S') && (data->player->starting_angle = 270));
 	(void)((data->player->direction == 'E') && (data->player->starting_angle = 0));
 	(void)((data->player->direction == 'W') && (data->player->starting_angle = 180));
+	printf("Player's map coordinates are: y:%d and x:%d\n", j, i);
 }
 
 /* we're gonna have an i and j that represent the block we on when looking for the walls, just to make sure we dont go out of bounds. */
@@ -106,6 +136,7 @@ void	find_player_grid(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH])
 				|| (map[j][i] == 'E') || (map[j][i] == 'W'))
 			{
 				data->player->direction = map[j][i];
+				printf("Found player in %c starting direction\n", map[j][i]);
 				block_to_pixel_coords(data, j, i);
 				return ;
 			}
