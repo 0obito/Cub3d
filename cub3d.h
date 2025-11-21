@@ -60,26 +60,28 @@ typedef struct s_playerdata
 {
 	double			x;
 	double			y;
+	int				grid_y;
+	int				grid_x;
 	char			direction;
 	double			starting_angle;
 }				t_playerdata;
 
 typedef struct s_coord
 {
-	int	y;
-	int	x;
+	double	y;
+	double	x;
 }				t_coord;
 
 typedef struct s_ray
 {
 	double	ray_length;
-	double	ray_angle;
-	double	grid_y;
-	double	grid_x;
+	int		grid_y;
+	int		grid_x;
+	int		y_corr;
+	int		x_corr;
 	double	nearest_blocky;
 	double	nearest_blockx;
-	double	traveled_y;
-	double	traveled_x;
+
 }				t_ray;
 
 /* a structure that holds the important data to comfortably use it around */

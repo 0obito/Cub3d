@@ -12,149 +12,136 @@
 
 #include "../cub3d.h"
 
-void	draw_wall(t_data *data, int ray_num)
+void	draw_wall(t_data *data, int ray_num, double corr_angle)
 {
 	char	*dst;
+	int		counter;
 	double	wall_height;
-	double	delta_py;
-	double	delta_px;
+	t_coord	params;
 
-	// ray_num (0 -> 99 included)
-	printf("Ray length: %f\n", data->ray->ray_length);
-	wall_height = WIN_HEIGHT - data->ray->ray_length;
-	printf("Wall height: %f\n", wall_height);
-	delta_py = (WIN_HEIGHT / 2) - (wall_height / 2);
-	printf("Delta py: %f\n", delta_py);
-	delta_px = WIN_WIDTH / 100;
-	printf("Delta px: %f\n", delta_px);
+	data->ray->ray_length *= cos(corr_angle * (M_PI / 180));
+	wall_height = WIN_HEIGHT * (100 / (data->ray->ray_length
+					* cos(corr_angle * (M_PI / 180))));
+	// printf("Ray length is %f\n", data->ray->ray_length);
+	// printf("Corr angle is %f\n", corr_angle);
+	// printf("Wall height is %f\n\n", wall_height);
+	params.y = (WIN_HEIGHT / 2) - (wall_height / 2);
+	params.x = ray_num * (WIN_WIDTH / 200);
 	while (wall_height > 0)
 	{
-		dst = (data->img->img_add) + ((int)(delta_py * data->img->line_length))
-			+ ((int)((delta_px + ray_num) * (data->img->bpp / 8)));
-		*dst = 200;
-		// dst = 200;
-		delta_py += 1;
+		counter = 1;
+		while (counter < 4)
+		{
+			dst = data->img->img_add + ((int)params.y * data->img->line_length)
+				+ (((int)params.x + counter) * (data->img->bpp / 8));
+			*(unsigned int *)dst = 0xFF0000FF;
+			counter += 1;
+		}
+		params.y += 1;
 		wall_height -= 1;
 	}
 }
 
-void	values_corrector(int *y_corr, int *x_corr, double angle)
+void	values_corrector(t_data *data, double angle)
 {
-	(void)((angle >= 0) && (angle <= 90)
-		&& (*y_corr = 1) && (*x_corr = 1) && printf("quart 1\n"));
-	(void)((angle >= 90) && (angle <= 180)
-		&& (*y_corr = 1) && (*x_corr = -1) && printf("quart 2\n"));
-	(void)((angle >= 180) && (angle <= 270)
-		&& (*y_corr = -1) && (*x_corr = -1) && printf("quart 3\n"));
-	(void)((angle >= 270) && (angle <= 360)
-		&& (*y_corr = -1) && (*x_corr = 1) && printf("quart 4\n"));
+	(void)((angle >= 0) && (angle < 90)
+		&& (data->ray->y_corr = -1) && (data->ray->x_corr = 1));
+	(void)((angle >= 90) && (angle < 180)
+		&& (data->ray->y_corr = -1) && (data->ray->x_corr = -1));
+	(void)((angle >= 180) && (angle < 270)
+		&& (data->ray->y_corr = 1) && (data->ray->x_corr = -1));
+	(void)((angle >= 270) && (angle < 360)
+		&& (data->ray->y_corr = 1) && (data->ray->x_corr = 1));
 }
 
 	// notice: there's a division by 0 possibility
+
+void	next_grid_finder(t_data *data, double *nearest_y, double *nearest_x, char *last_met)
+{
+	if (*nearest_y < *nearest_x)
+	{
+		*last_met = 'y';
+		data->ray->grid_y += data->ray->y_corr;
+		*nearest_y += data->ray->nearest_blocky;
+	}
+	else if (*nearest_y > *nearest_x)
+	{
+		*last_met = 'x';
+		data->ray->grid_x += data->ray->x_corr;
+		*nearest_x += data->ray->nearest_blockx;
+	}
+	else
+	{
+		*last_met = 'b';
+		data->ray->grid_y += data->ray->y_corr;
+		data->ray->grid_x += data->ray->x_corr;
+		*nearest_y += data->ray->nearest_blocky;
+		*nearest_x += data->ray->nearest_blockx;
+	}
+	return ;
+}
+
 double	find_wall(t_data *data, double angle, char map[MAP_HEIGHT][MAP_WIDTH])
 {
 	double	nearest_y;
 	double	nearest_x;
-	int		grid_y;
-	int		grid_x;
-	int		y_corr;
-	int		x_corr;
-	int		last_met;
+	char	last_met;
 
-	values_corrector(&y_corr, &x_corr, angle);
-	printf("Ray at angle: %f\n", angle);
+	values_corrector(data, angle);
+	data->ray->grid_y = data->player->grid_y;
+	data->ray->grid_x = data->player->grid_x;
 	nearest_y = data->ray->nearest_blocky;
 	nearest_x = data->ray->nearest_blockx;
-	grid_y = data->ray->grid_y;
-	grid_x = data->ray->grid_x;
-	while (grid_y >= 0 && grid_y <= 9 && grid_x >= 0 && grid_x <= 9)
+	while (data->ray->grid_y >= 0 && data->ray->grid_y <= 9
+			&& data->ray->grid_x >= 0 && data->ray->grid_x <= 9)
 	{
-		if (nearest_y < nearest_x)
+		next_grid_finder(data, &nearest_y, &nearest_x, &last_met);
+		if (map[data->ray->grid_y][data->ray->grid_x] == '1')
 		{
-			last_met = 1;
-			grid_y += y_corr;
-			nearest_y += data->ray->nearest_blocky;
-		}
-		else if (nearest_y > nearest_x)
-		{
-			last_met = 0;
-			grid_x += x_corr;
-			nearest_x += data->ray->nearest_blockx;
-		}
-		else
-		{
-			last_met = 2;
-			grid_y += y_corr;
-			grid_x += x_corr;
-			nearest_y += data->ray->nearest_blocky;
-			nearest_x += data->ray->nearest_blockx;
-		}
-		if (grid_y >= 0 && grid_y <= 9 && grid_x >= 0 && grid_x <= 9
-				&& map[grid_y][grid_x] == '1')
-		{
-			printf("Wall found at %d %d\n", grid_y, grid_x);
-			printf("delta y: %f\n", data->ray->nearest_blocky);
-			printf("y final: %f\n", nearest_y);
-			printf("delta x: %f\n", data->ray->nearest_blockx);
-			printf("x final: %f\n", nearest_x);
-			if (!last_met)
-				return (((nearest_y  - ((2 / 2) * data->ray->nearest_blocky))) / (sin(angle * (M_PI / 180))));
+			if (last_met == 'y')
+				return (((nearest_y  - (3 / 2) * data->ray->nearest_blocky))
+					/ fabs(sin(angle * (M_PI / 180))));
 			else
-				return (((nearest_x  - ((2 / 2) * data->ray->nearest_blockx))) / (cos(angle * (M_PI / 180))));
+				return ((nearest_x  - (3 / 2) * data->ray->nearest_blockx)
+				/ fabs(cos(angle * (M_PI / 180))));
 		}
 	}
 	return (0);
 }
 
-void	cast_vectors(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH])
+/* a function that cast the rays */
+void	ray_caster(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH])
 {
+	int			ray_num;
 	double		angle;
 	double		delta_angle;
-	double		ray_len;
-	int			ray_num;
+	double		correction_angle;
 
-	delta_angle = 30;
+	delta_angle = 60;
 	angle = (data->player->starting_angle) - (delta_angle / 2) + 360;
 	data->ray->ray_length = 0;
-	data->ray->traveled_y = GRID_HEIGHT / 2;
-	data->ray->traveled_x = GRID_WIDTH / 2;
-	ray_num = 0;
-	while (ray_num < 100)
+	ray_num = -1;
+	correction_angle = (delta_angle / 2);
+	while (++ray_num < 200)
 	{
-		// set to half the value at first (player is in the center of the grid)
-		// then start resetting it to the whole value everytime
-		// the corresponding grid is encountered.
-		angle = (int)angle % 360;
+		angle = fmod(angle, 360);
 		data->ray->nearest_blocky
 			= fabs(GRID_HEIGHT / (sin(angle * (M_PI / 180))));
 		data->ray->nearest_blockx
 			= fabs(GRID_WIDTH / (cos(angle * (M_PI / 180))));
-		ray_len = find_wall(data, angle, map);
-		printf("ray_length original from func: %f\n", ray_len);
-		data->ray->ray_length = ray_len;
-		draw_wall(data, ray_num);
+		data->ray->ray_length = find_wall(data, angle, map);
+		draw_wall(data, ray_num, correction_angle);
 		angle += 0.3000000000;
-		ray_num += 1;
+		correction_angle -= 0.3;
 	}
-}
-
-/* a function that cast the rays */
-void	ray_caster(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH])
-{
-	// int	py;
-	// int	px;
-
-	// py = data->player->y;
-	// px = data->player->x;
-	cast_vectors(data, map);
 }
 
 void	block_to_pixel_coords(t_data *data, int j, int i)
 {
 	data->player->y = (j + 1 / 2) * (WIN_HEIGHT / MAP_HEIGHT);
 	data->player->x = (i + 1 / 2) * (WIN_WIDTH / MAP_WIDTH);
-	data->ray->grid_y = j;
-	data->ray->grid_x = i;
+	data->player->grid_y = j;
+	data->player->grid_x = i;
 	(void)((data->player->direction == 'N') && (data->player->starting_angle = 90));
 	(void)((data->player->direction == 'S') && (data->player->starting_angle = 270));
 	(void)((data->player->direction == 'E') && (data->player->starting_angle = 0));
@@ -162,8 +149,6 @@ void	block_to_pixel_coords(t_data *data, int j, int i)
 	printf("Player's map coordinates are: y:%d and x:%d\n", j, i);
 }
 
-/* we're gonna have an i and j that represent the block we on when looking for the walls, just to make sure we dont go out of bounds. */
-/*  */
 void	find_player_grid(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH])
 {
 	int		j;
@@ -193,35 +178,26 @@ void	find_player_grid(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH])
 /* a function that colors the ceiling and the floor inside the window */
 int	draw_ceiling_and_floor(t_data *data)
 {
-	char	*dst;
-	int		y;
-	int		x;
+	char			*dst;
+	unsigned int	color;
+	int				y;
+	int				x;
 
+	color = 0xFF663300;
 	y = -1;
-	while (++y < WIN_HEIGHT / 2)
-	{
-		x = -1;
-		while (++x < WIN_WIDTH)
-		{
-			dst = data->img->img_add + (y * data->img->line_length)
-				+ (x * (data->img->bpp / 8));
-			*(unsigned int *)dst = 0x663300;
-		}
-	}
-	--y;
 	while (++y < WIN_HEIGHT)
 	{
+		(void)((y == (WIN_HEIGHT / 2)) && (color = 0xFF1B1C1D) && printf("color set\n"));
 		x = -1;
 		while (++x < WIN_WIDTH)
 		{
 			dst = data->img->img_add + (y * data->img->line_length)
 				+ (x * (data->img->bpp / 8));
-			*(unsigned int *)dst = 0x1B1C1D;
+			*(unsigned int *)dst = color;
 		}
 	}
 	return (0);
 }
-
 
 /* the function that starts everything rendering wise */
 int	render(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH])
