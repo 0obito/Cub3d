@@ -98,16 +98,18 @@ typedef struct s_data
 }				t_data;
 
 /* Function Prototypes*/
-int		initiate_mlx(t_data *data, t_mlxdata *mlx, t_imgdata *img);
-int		initiate_player_and_ray(t_data *data, t_playerdata *player, t_ray *ray);
-void	color_grid(t_data *data, int grid_x, int grid_y);
-void	draw_a_line(t_data *data);
-void	draw_direction_vector(t_data *data);
-void	draw_player(t_data *data, int grid_x, int grid_y);
-void	draw_ceiling_and_floor(t_data *data);
-void	draw_wall(t_data *data, int ray_num, double corr_angle);
-int		render(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH]);
 int		ft_strlen(const char *s);
 int		ft_write(const char *s);
+void	block_to_pixel_coords(t_data *data, int j, int i);
+void	direction_corrector(t_data *data, double angle);
+double	deg_to_rad(double angle);
+double	rad_to_deg(double angle);
+int		find_player_grid(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH]);
+int		render(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH]);
+void	draw_ceiling_and_floor(t_data *data);
+void	draw_wall(t_data *data, int ray_num, double corr_angle);
+int		initiate_mlx(t_data *data, t_mlxdata *mlx, t_imgdata *img);
+int		initiate_player_and_ray(t_data *data, t_playerdata *player, t_ray *ray);
+int		render(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH]);
 
 #endif /* CUB3D_H */

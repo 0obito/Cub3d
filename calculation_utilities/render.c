@@ -12,54 +12,55 @@
 
 #include "../cub3d.h"
 
-void	next_grid_finder(t_data *data, double *nearest_y, double *nearest_x, char *last_met)
+void	next_grid_finder(t_data *data, double *close_y,
+			double *close_x, char *last_met)
 {
-	if (*nearest_y < *nearest_x)
+	if (*close_y < *close_x)
 	{
 		*last_met = 'y';
 		data->ray->grid_y += data->ray->y_dir;
-		*nearest_y += data->ray->nearest_blocky;
+		*close_y += data->ray->nearest_blocky;
 	}
-	else if (*nearest_y > *nearest_x)
+	else if (*close_y > *close_x)
 	{
 		*last_met = 'x';
 		data->ray->grid_x += data->ray->x_dir;
-		*nearest_x += data->ray->nearest_blockx;
+		*close_x += data->ray->nearest_blockx;
 	}
 	else
 	{
 		*last_met = 'b';
 		data->ray->grid_y += data->ray->y_dir;
 		data->ray->grid_x += data->ray->x_dir;
-		*nearest_y += data->ray->nearest_blocky;
-		*nearest_x += data->ray->nearest_blockx;
+		*close_y += data->ray->nearest_blocky;
+		*close_x += data->ray->nearest_blockx;
 	}
 	return ;
 }
 
 double	find_wall(t_data *data, double angle, char map[MAP_HEIGHT][MAP_WIDTH])
 {
-	double	nearest_y;
-	double	nearest_x;
+	double	close_y;
+	double	close_x;
 	char	last_met;
 
-	values_corrector(data, angle);
+	direction_corrector(data, angle);
 	data->ray->grid_y = data->player->grid_y;
 	data->ray->grid_x = data->player->grid_x;
-	nearest_y = data->ray->nearest_blocky;
-	nearest_x = data->ray->nearest_blockx;
+	close_y = data->ray->nearest_blocky;
+	close_x = data->ray->nearest_blockx;
 	while (data->ray->grid_y >= 0 && data->ray->grid_y <= 9
 			&& data->ray->grid_x >= 0 && data->ray->grid_x <= 9)
 	{
-		next_grid_finder(data, &nearest_y, &nearest_x, &last_met);
+		next_grid_finder(data, &close_y, &close_x, &last_met);
 		if (map[data->ray->grid_y][data->ray->grid_x] == '1')
 		{
 			if (last_met == 'y')
-				return (((nearest_y  - (3 / 2) * data->ray->nearest_blocky))
-					/ fabs(sin(angle * (M_PI / 180))));
+				return ((close_y  - (3.0 / 2 * data->ray->nearest_blocky))
+					/ fabs(sin(angle)));
 			else
-				return ((nearest_x  - (3 / 2) * data->ray->nearest_blockx)
-				/ fabs(cos(angle * (M_PI / 180))));
+				return ((close_x  - (3.0 / 2 * data->ray->nearest_blockx))
+				/ fabs(cos(angle)));
 		}
 	}
 	return (0);
@@ -72,20 +73,17 @@ void	ray_caster(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH])
 	double		angle;
 	double		correction_angle;
 
-	angle = (data->player->starting_angle) - (FOV / 2) + 360;
-	rad_to_deg(&angle);
 	data->ray->ray_length = 0;
 	ray_num = 0;
+	angle = rad_to_deg(data->player->starting_angle) - (FOV / 2);
 	correction_angle = (FOV / 2);
-	deg_to_rad(&correction_angle);
 	while (ray_num < NUM_OF_RAYS)
 	{
-		angle
 		data->ray->nearest_blocky
-			= fabs(GRID_HEIGHT / (sin(angle * (M_PI / 180))));
+			= fabs(GRID_HEIGHT / (sin(deg_to_rad(angle))));
 		data->ray->nearest_blockx
-			= fabs(GRID_WIDTH / (cos(angle * (M_PI / 180))));
-		data->ray->ray_length = find_wall(data, angle, map);
+			= fabs(GRID_WIDTH / (cos(deg_to_rad(angle))));
+		data->ray->ray_length = find_wall(data, deg_to_rad(angle), map);
 		draw_wall(data, ray_num, correction_angle);
 		angle += 0.3000000000;
 		correction_angle -= 0.3;
