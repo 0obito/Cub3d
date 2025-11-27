@@ -24,6 +24,8 @@
 /* the MACROs */
 # define WIN_HEIGHT 1000
 # define WIN_WIDTH 1000
+# define FOV 60
+# define NUM_OF_RAYS 200
 # define MAP_HEIGHT 10
 # define MAP_WIDTH 10
 # define GRID_HEIGHT (WIN_HEIGHT / MAP_HEIGHT)
@@ -77,8 +79,8 @@ typedef struct s_ray
 	double	ray_length;
 	int		grid_y;
 	int		grid_x;
-	int		y_corr;
-	int		x_corr;
+	int		y_dir;
+	int		x_dir;
 	double	nearest_blocky;
 	double	nearest_blockx;
 
@@ -102,6 +104,8 @@ void	color_grid(t_data *data, int grid_x, int grid_y);
 void	draw_a_line(t_data *data);
 void	draw_direction_vector(t_data *data);
 void	draw_player(t_data *data, int grid_x, int grid_y);
+void	draw_ceiling_and_floor(t_data *data);
+void	draw_wall(t_data *data, int ray_num, double corr_angle);
 int		render(t_data *data, char map[MAP_HEIGHT][MAP_WIDTH]);
 int		ft_strlen(const char *s);
 int		ft_write(const char *s);
